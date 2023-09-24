@@ -25,7 +25,7 @@ fn parse_wav_file(path: &Path) -> Vec<i16> {
 }
 
 fn main() {
-    let audio_file_path = Path::new("./ingested_wav/test.wav");
+    let audio_file_path = Path::new("./samples/test.wav");
     if !audio_file_path.exists() {
         panic!("audio file doesn't exist");
     }
