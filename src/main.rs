@@ -32,7 +32,7 @@ fn main() {
     let audio_data = parse_wav_file(audio_file_path);
     let ingested_wav = whisper_rs::convert_integer_to_float_audio(&audio_data);
 
-    let model_path = Path::new("./models/tiny.en.pt");
+    let model_path = Path::new("./models/tiny.en.bin");
     if !model_path.exists() {
         panic!("model does not exist");
     }
@@ -46,6 +46,8 @@ fn main() {
 
     // fetch the results
     let num_segments = state.full_n_segments().expect("failed to get number of segments");
+
+    println!("{}", num_segments);
 
     for i in 0..num_segments {
         let segment = state.full_get_segment_text(i).expect("failed to get segment");
