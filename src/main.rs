@@ -1,5 +1,4 @@
 use whisper_rs::{WhisperContext, FullParams, SamplingStrategy};
-use std::fs;
 use std::path::Path;
 use hound::{SampleFormat, WavReader};
 
@@ -26,24 +25,27 @@ fn parse_wav_file(path: &Path) -> Vec<i16> {
 }
 
 fn main() {
-    let audio_file_path = Path::new("./samples/test.wav");
+    let audio_file_path = Path::new("./ingested_wav/test.wav");
     if !audio_file_path.exists() {
         panic!("audio file doesn't exist");
     }
     let audio_data = parse_wav_file(audio_file_path);
+    let ingested_wav = whisper_rs::convert_integer_to_float_audio(&audio_data);
 
-    let mut ctx = WhisperContext::new("path/to/model").expect("failed to load model");
+    let model_path = Path::new("./models/tiny.en.pt");
+    if !model_path.exists() {
+        panic!("model does not exist");
+    }
+    println!("{}", &model_path.to_string_lossy());
+    let ctx = WhisperContext::new(&model_path.to_string_lossy()).expect("Failed to load model");
 
-    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+    let params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
 
-    let state = ctx.create_state().expect("failed to create state");
-    state.full(params, &audio_data[..])
-        .expect("failed to run model");
+    let mut state = ctx.create_state().expect("failed to create state");
+    state.full(params, &ingested_wav).expect("failed to run model");
 
     // fetch the results
-    let num_segments = state
-        .full_n_segments()
-        .expect("failed to get number of segments");
+    let num_segments = state.full_n_segments().expect("failed to get number of segments");
 
     for i in 0..num_segments {
         let segment = state.full_get_segment_text(i).expect("failed to get segment");
