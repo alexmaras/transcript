@@ -1,5 +1,5 @@
 use whisper_rs::{WhisperContext, FullParams, SamplingStrategy};
-use std::path::Path;
+use std::{path::Path, cmp};
 use std::fs::File;
 use std::io::Write;
 use hound::{SampleFormat, WavReader};
@@ -34,10 +34,11 @@ fn parse_wav_file(path: &Path) -> Vec<i16> {
 }
 
 fn milliseconds_to_srt_time_string(time: i64) -> String {
-    let ms = time % 1000;
-    let seconds = (time / 1000) % 60;
-    let minutes = (time / 1000 / 60) % 60;
-    let hours = time / 1000 / 60 / 60;
+    let positive_time = cmp::max(0, time);
+    let ms = positive_time % 1000;
+    let seconds = (positive_time / 1000) % 60;
+    let minutes = (positive_time / 1000 / 60) % 60;
+    let hours = positive_time / 1000 / 60 / 60;
     format!("{:02}:{:02}:{:02},{:03}", hours, minutes, seconds, ms)
 }
 
@@ -86,4 +87,16 @@ fn main() {
 
     write_to_file(Path::new("./transcribed.txt"), timestamped_lines);
     write_to_file(Path::new("./transcribed.srt"), srt_sequences);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn _milliseconds_to_srt_time_string() {
+        assert_eq!(milliseconds_to_srt_time_string(1999), "00:00:01,999");
+        assert_eq!(milliseconds_to_srt_time_string(5602555), "01:33:22,555");
+        assert_eq!(milliseconds_to_srt_time_string(-4550), "00:00:00,000");
+    }
 }
