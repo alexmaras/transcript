@@ -1,6 +1,15 @@
 use whisper_rs::{WhisperContext, FullParams, SamplingStrategy};
-use std::path::Path;
+use std::{path::Path, cmp};
+use std::fs::File;
+use std::io::Write;
 use hound::{SampleFormat, WavReader};
+
+fn write_to_file(path: &Path, lines: Vec<String>) {
+    let mut file = File::create(path).expect("Could not create file");
+    for line in lines {
+        file.write_all(line.as_bytes()).expect("Could not write to file");
+    }
+}
 
 fn parse_wav_file(path: &Path) -> Vec<i16> {
     let reader = WavReader::open(path).expect("failed to read file");
@@ -22,6 +31,15 @@ fn parse_wav_file(path: &Path) -> Vec<i16> {
         .into_samples::<i16>()
         .map(|x| x.expect("sample"))
         .collect::<Vec<_>>()
+}
+
+fn segment_time_to_srt_time_string(time: i64) -> String {
+    let positive_time = cmp::max(0, time) * 10;
+    let ms = positive_time % 1000;
+    let seconds = (positive_time / 1000) % 60;
+    let minutes = (positive_time / 1000 / 60) % 60;
+    let hours = positive_time / 1000 / 60 / 60;
+    format!("{:02}:{:02}:{:02},{:03}", hours, minutes, seconds, ms)
 }
 
 fn main() {
@@ -48,11 +66,38 @@ fn main() {
     let num_segments = state.full_n_segments().expect("failed to get number of segments");
 
     println!("{}", num_segments);
+    
+    let mut srt_sequences: Vec<String> = Vec::new();
+    let mut timestamped_lines: Vec<String> = Vec::new();
 
     for i in 0..num_segments {
         let segment = state.full_get_segment_text(i).expect("failed to get segment");
         let start_timestamp = state.full_get_segment_t0(i).expect("failed to get segment start timestamp");
         let end_timestamp = state.full_get_segment_t1(i).expect("failed to get segment end timestamp");
-        println!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
+
+        let srt_start_timestamp = segment_time_to_srt_time_string(start_timestamp);
+        let srt_end_timestamp = segment_time_to_srt_time_string(end_timestamp);
+        let srt_formatted: String = format!("{}\n{srt_start_timestamp} --> {srt_end_timestamp}\n{segment}\n\n", i+1);
+        srt_sequences.push(srt_formatted);
+
+        let timestamped: String = format!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
+        println!("{}", timestamped);
+        timestamped_lines.push(format!("{}\n", timestamped));
+    }
+
+    write_to_file(Path::new("./transcribed.txt"), timestamped_lines);
+    write_to_file(Path::new("./transcribed.srt"), srt_sequences);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn _segment_time_to_srt_time_string() {
+        assert_eq!(segment_time_to_srt_time_string(1999), "00:00:19,990");
+        assert_eq!(segment_time_to_srt_time_string(838850), "02:19:48,500");
+        assert_eq!(segment_time_to_srt_time_string(5602555), "15:33:45,550");
+        assert_eq!(segment_time_to_srt_time_string(-4550), "00:00:00,000");
     }
 }
