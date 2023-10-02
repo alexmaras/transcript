@@ -77,7 +77,7 @@ fn main() {
 
         let srt_start_timestamp = segment_time_to_srt_time_string(start_timestamp);
         let srt_end_timestamp = segment_time_to_srt_time_string(end_timestamp);
-        let srt_formatted: String = format!("{}\n{} --> {}\n{}\n\n", i+1, srt_start_timestamp, srt_end_timestamp, segment);
+        let srt_formatted: String = format!("{}\n{srt_start_timestamp} --> {srt_end_timestamp}\n{segment}\n\n", i+1);
         srt_sequences.push(srt_formatted);
 
         let timestamped: String = format!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
