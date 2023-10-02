@@ -3,6 +3,7 @@ use std::{path::Path, cmp};
 use std::fs::File;
 use std::io::Write;
 use hound::{SampleFormat, WavReader};
+use std::env;
 
 fn write_to_file(path: &Path, lines: Vec<String>) {
     let mut file = File::create(path).expect("Could not create file");
@@ -43,17 +44,23 @@ fn segment_time_to_srt_time_string(time: i64) -> String {
 }
 
 fn main() {
-    let audio_file_path = Path::new("./samples/test.wav");
+    let args: Vec<String> = env::args().collect();
+    
+    let audio_file_path_raw = &args[1];
+    let model_path_raw = "./models/tiny.en.bin";
+
+    let audio_file_path = Path::new(audio_file_path_raw);
     if !audio_file_path.exists() {
         panic!("audio file doesn't exist");
     }
-    let audio_data = parse_wav_file(audio_file_path);
-    let ingested_wav = whisper_rs::convert_integer_to_float_audio(&audio_data);
-
-    let model_path = Path::new("./models/tiny.en.bin");
+    let model_path = Path::new(model_path_raw);
     if !model_path.exists() {
         panic!("model does not exist");
     }
+
+    let audio_data = parse_wav_file(audio_file_path);
+    let ingested_wav = whisper_rs::convert_integer_to_float_audio(&audio_data);
+
     println!("{}", &model_path.to_string_lossy());
     let ctx = WhisperContext::new(&model_path.to_string_lossy()).expect("Failed to load model");
 
