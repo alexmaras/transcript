@@ -1,6 +1,15 @@
 use whisper_rs::{WhisperContext, FullParams, SamplingStrategy};
 use std::path::Path;
+use std::fs::File;
+use std::io::Write;
 use hound::{SampleFormat, WavReader};
+
+fn write_to_file(path: &Path, lines: Vec<String>) {
+    let mut file = File::create(path).expect("Could not create file");
+    for line in lines {
+        file.write_all(line.as_bytes()).expect("Could not write to file");
+    }
+}
 
 fn parse_wav_file(path: &Path) -> Vec<i16> {
     let reader = WavReader::open(path).expect("failed to read file");
@@ -48,11 +57,19 @@ fn main() {
     let num_segments = state.full_n_segments().expect("failed to get number of segments");
 
     println!("{}", num_segments);
+    
+    let mut timestamped_lines: Vec<String> = Vec::new();
 
     for i in 0..num_segments {
         let segment = state.full_get_segment_text(i).expect("failed to get segment");
         let start_timestamp = state.full_get_segment_t0(i).expect("failed to get segment start timestamp");
         let end_timestamp = state.full_get_segment_t1(i).expect("failed to get segment end timestamp");
-        println!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
+
+        let timestamped: String = format!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
+        println!("{}", timestamped);
+        timestamped_lines.push(format!("{}\n", timestamped));
     }
+
+    write_to_file(Path::new("./transcribed.txt"), timestamped_lines);
+
 }
