@@ -33,8 +33,8 @@ fn parse_wav_file(path: &Path) -> Vec<i16> {
         .collect::<Vec<_>>()
 }
 
-fn milliseconds_to_srt_time_string(time: i64) -> String {
-    let positive_time = cmp::max(0, time);
+fn segment_time_to_srt_time_string(time: i64) -> String {
+    let positive_time = cmp::max(0, time) * 10;
     let ms = positive_time % 1000;
     let seconds = (positive_time / 1000) % 60;
     let minutes = (positive_time / 1000 / 60) % 60;
@@ -75,8 +75,8 @@ fn main() {
         let start_timestamp = state.full_get_segment_t0(i).expect("failed to get segment start timestamp");
         let end_timestamp = state.full_get_segment_t1(i).expect("failed to get segment end timestamp");
 
-        let srt_start_timestamp = milliseconds_to_srt_time_string(start_timestamp);
-        let srt_end_timestamp = milliseconds_to_srt_time_string(end_timestamp);
+        let srt_start_timestamp = segment_time_to_srt_time_string(start_timestamp);
+        let srt_end_timestamp = segment_time_to_srt_time_string(end_timestamp);
         let srt_formatted: String = format!("{}\n{} --> {}\n{}\n\n", i+1, srt_start_timestamp, srt_end_timestamp, segment);
         srt_sequences.push(srt_formatted);
 
@@ -94,9 +94,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn _milliseconds_to_srt_time_string() {
-        assert_eq!(milliseconds_to_srt_time_string(1999), "00:00:01,999");
-        assert_eq!(milliseconds_to_srt_time_string(5602555), "01:33:22,555");
-        assert_eq!(milliseconds_to_srt_time_string(-4550), "00:00:00,000");
+    fn _segment_time_to_srt_time_string() {
+        assert_eq!(segment_time_to_srt_time_string(1999), "00:00:19,990");
+        assert_eq!(segment_time_to_srt_time_string(838850), "02:19:48,500");
+        assert_eq!(segment_time_to_srt_time_string(5602555), "15:33:45,550");
+        assert_eq!(segment_time_to_srt_time_string(-4550), "00:00:00,000");
     }
 }
