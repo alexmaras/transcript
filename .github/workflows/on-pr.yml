@@ -12,11 +12,4 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup and Build
-        id: build_image
-        uses: redhat-actions/s2i-build@v2
-        with:
-          path_context: '.'
-          # Builder image for a java project
-          builder_image: 'registry.access.redhat.com/devtools/rust-toolset-7-rhel7'
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.TAGS }}
+        run: docker build .
