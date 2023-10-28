@@ -13,6 +13,9 @@ struct Args {
 
     #[arg(short, long)]
     input: String,
+
+    #[arg(short, long)]
+    output: String,
 }
 
 fn write_to_file(path: &Path, lines: Vec<String>) {
@@ -58,6 +61,7 @@ fn main() {
     
     let audio_file_path_raw = &args.input;
     let model_path_raw = &args.model;
+    let output_path_raw = &args.output;
 
     let audio_file_path = Path::new(audio_file_path_raw);
     if !audio_file_path.exists() {
@@ -102,8 +106,8 @@ fn main() {
         timestamped_lines.push(format!("{}\n", timestamped));
     }
 
-    write_to_file(Path::new("./transcribed.txt"), timestamped_lines);
-    write_to_file(Path::new("./transcribed.srt"), srt_sequences);
+    write_to_file(Path::new(&format!("{}.txt", output_path_raw)), timestamped_lines);
+    write_to_file(Path::new(&format!("{}.srt", output_path_raw)), srt_sequences);
 }
 
 #[cfg(test)]
