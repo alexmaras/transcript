@@ -3,7 +3,17 @@ use std::{path::Path, cmp};
 use std::fs::File;
 use std::io::Write;
 use hound::{SampleFormat, WavReader};
-use std::env;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    model: String,
+
+    #[arg(short, long)]
+    input: String,
+}
 
 fn write_to_file(path: &Path, lines: Vec<String>) {
     let mut file = File::create(path).expect("Could not create file");
@@ -44,10 +54,10 @@ fn segment_time_to_srt_time_string(time: i64) -> String {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args = Args::parse();
     
-    let audio_file_path_raw = &args[1];
-    let model_path_raw = "./models/tiny.en.bin";
+    let audio_file_path_raw = &args.input;
+    let model_path_raw = &args.model;
 
     let audio_file_path = Path::new(audio_file_path_raw);
     if !audio_file_path.exists() {
