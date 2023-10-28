@@ -1,6 +1,6 @@
 FROM rust:1.72
 
-RUN apt-get update && apt-get install -y clang
+RUN apt-get update && apt-get install -y clang cmake
 
 WORKDIR /usr/src/transcript
 COPY . .
