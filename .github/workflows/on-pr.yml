@@ -2,13 +2,12 @@ on:
   pull_request:
 
 jobs:
-  label_issue:
+  build:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: test-buiold
+      TAGS: v1 ${{ github.sha }}
     steps:
-      env:
-        IMAGE_NAME: test-buiold
-        TAGS: v1 ${{ github.sha }}
-
       - name: Checkout
         uses: actions/checkout@v2
 
