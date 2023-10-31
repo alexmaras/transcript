@@ -5,8 +5,21 @@ use std::io;
 use std::io::Write;
 use std::io::Read;
 use hound::{SampleFormat, WavReader};
-use std::env;
 use atty::Stream;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    model: String,
+
+    #[arg(short, long)]
+    input: Option<String>,
+
+    #[arg(short, long)]
+    output: String,
+}
 
 fn write_to_file(path: &Path, lines: Vec<String>) {
     let mut file = File::create(path).expect("Could not create file");
@@ -15,15 +28,10 @@ fn write_to_file(path: &Path, lines: Vec<String>) {
     }
 }
 
-fn construct_wavreader() -> WavReader<Box<dyn io::BufRead>> {
-    let args: Vec<String> = env::args().collect();
-    
+fn construct_wavreader(audio_file_path_raw: &Option<String>) -> WavReader<Box<dyn io::BufRead>> {
     if atty::is(Stream::Stdin) {
-        if args.len() < 2  {
-            panic!("No audio file passed");
-        }
-        let audio_file_path_raw = &args[1];
-        let audio_file_path = Path::new(audio_file_path_raw);
+        let audio_file_path_raw_2 = audio_file_path_raw.as_ref().expect("audio file not provided");
+        let audio_file_path = Path::new(&audio_file_path_raw_2);
         if !audio_file_path.exists() {
             panic!("audio file doesn't exist");
         }
@@ -81,19 +89,21 @@ fn segment_time_to_srt_time_string(time: i64) -> String {
 }
 
 fn main() {
-
-    let model_path_raw = "./models/tiny.en.bin";
+    let args = Args::parse();
+    
+    let audio_file_path_raw = &args.input;
+    let model_path_raw = &args.model;
+    let output_path_raw = &args.output;
 
     let model_path = Path::new(model_path_raw);
     if !model_path.exists() {
         panic!("model does not exist");
     }
 
-    let wavreader = construct_wavreader();
+    let wavreader = construct_wavreader(audio_file_path_raw);
     let audio_data = parse_wav(wavreader);
     let ingested_wav = whisper_rs::convert_integer_to_float_audio(&audio_data);
 
-    println!("{}", &model_path.to_string_lossy());
     let ctx = WhisperContext::new(&model_path.to_string_lossy()).expect("Failed to load model");
 
     let params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
@@ -124,8 +134,8 @@ fn main() {
         timestamped_lines.push(format!("{}\n", timestamped));
     }
 
-    write_to_file(Path::new("./transcribed.txt"), timestamped_lines);
-    write_to_file(Path::new("./transcribed.srt"), srt_sequences);
+    write_to_file(Path::new(&format!("{}.txt", output_path_raw)), timestamped_lines);
+    write_to_file(Path::new(&format!("{}.srt", output_path_raw)), srt_sequences);
 }
 
 #[cfg(test)]
