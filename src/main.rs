@@ -63,18 +63,16 @@ fn parse_wav(reader: WavReader<Box<dyn io::BufRead>>) -> Vec<i16> {
     reader
         .into_samples::<i16>()
         .map_while(|sample| match sample {
-            Ok(sample) => {
-                Some(sample)
-            },
-            Err(hound::Error::IoError(e)) => {
-                if let Some(ee) = e.get_ref() {
-                    if "Failed to read enough bytes." == &format!("{}", ee) {
+            Ok(sample) => Some(sample),
+            Err(hound::Error::IoError(error)) => {
+                if let Some(inner_error) = error.get_ref() {
+                    if "Failed to read enough bytes." == format!("{}", inner_error) {
                         return None
                     }
                 }
-                panic!("Error reading audio data: {:#?}", e);
+                panic!("Error reading audio data: {:#?}", error);
             }
-            Err(e) => panic!("Error reading audio data: {:#?}", e)
+            Err(error) => panic!("Error reading audio data: {:#?}", error)
         })
         .collect::<Vec<_>>()
 }
