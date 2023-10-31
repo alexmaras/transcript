@@ -30,8 +30,8 @@ fn write_to_file(path: &Path, lines: Vec<String>) {
 
 fn construct_wavreader(audio_file_path_raw: &Option<String>) -> WavReader<Box<dyn io::BufRead>> {
     if atty::is(Stream::Stdin) {
-        let audio_file_path_raw_2 = audio_file_path_raw.as_ref().expect("audio file not provided");
-        let audio_file_path = Path::new(&audio_file_path_raw_2);
+        let audio_file_path_resolved = audio_file_path_raw.as_ref().expect("audio file not provided");
+        let audio_file_path = Path::new(audio_file_path_resolved);
         if !audio_file_path.exists() {
             panic!("audio file doesn't exist");
         }
